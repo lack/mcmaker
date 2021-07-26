@@ -20,12 +20,14 @@ import (
 
 const roleKey = "machineconfiguration.openshift.io/role"
 
+// McMaker represents a MachineConfig that is being constructed from constituent parts
 type McMaker struct {
 	name string
 	mc   *machineconfigv1.MachineConfig
 	i    *ign3types.Config
 }
 
+// New creates a new McMaker with the given name
 func New(name string) McMaker {
 	return McMaker{
 		name: name,
@@ -48,6 +50,7 @@ func New(name string) McMaker {
 	}
 }
 
+// SetRole sets the MachineConfig object name and MCP-role selection label to the given role
 func (m *McMaker) SetRole(role string) {
 	m.mc.ObjectMeta.Name = fmt.Sprintf("%s-%s", m.name, role)
 	m.mc.ObjectMeta.Labels[roleKey] = role
@@ -118,6 +121,7 @@ func trimEmptyMap(src map[string]interface{}) map[string]interface{} {
 	return dst
 }
 
+// AddFile adds a file to the MachineConfig object from the given local file
 func (m *McMaker) AddFile(fname, path string, mode int) error {
 	fdata, err := os.Open(fname)
 	if err != nil {
@@ -126,9 +130,10 @@ func (m *McMaker) AddFile(fname, path string, mode int) error {
 	return m.AddFileFromStream(fdata, path, mode)
 }
 
+// AddFileFromStream adds a file to the MachineConfig object from the given io.Reader
 func (m *McMaker) AddFileFromStream(fdata io.Reader, path string, mode int) error {
 	if path == "" {
-		return fmt.Errorf("File entries require a path")
+		return fmt.Errorf("file entries require a path")
 	}
 	var encodedBytes bytes.Buffer
 	encoder := base64.NewEncoder(base64.StdEncoding, &encodedBytes)
@@ -154,6 +159,7 @@ func (m *McMaker) AddFileFromStream(fdata io.Reader, path string, mode int) erro
 	return nil
 }
 
+// AddUnit adds a systemd unit to the MachineConfig object from the given local file
 func (m *McMaker) AddUnit(fname, name string, enable bool) error {
 	s, err := os.Open(fname)
 	if err != nil {
@@ -165,9 +171,10 @@ func (m *McMaker) AddUnit(fname, name string, enable bool) error {
 	return m.AddUnitFromStream(s, name, enable)
 }
 
+// AddUnitFromStream adds a systemd unit to the MachineConfig object from the given io.Reader
 func (m *McMaker) AddUnitFromStream(source io.Reader, name string, enable bool) error {
 	if name == "" {
-		return fmt.Errorf("Unit entries require a name")
+		return fmt.Errorf("unit entries require a name")
 	}
 
 	var contents bytes.Buffer
@@ -187,6 +194,7 @@ func (m *McMaker) AddUnitFromStream(source io.Reader, name string, enable bool) 
 	return nil
 }
 
+// WriteTo writes the fully rendered MachineConfig object as yaml to the given io.Writer, after stripping empty fields
 func (m *McMaker) WriteTo(output io.Writer) (int64, error) {
 	//Combine the ingition struct into the mc struct
 	rawIgnition, err := json.Marshal(m.i)
