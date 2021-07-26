@@ -18,20 +18,25 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const roleKey = "machineconfiguration.openshift.io/role"
+
 type McMaker struct {
-	mc *machineconfigv1.MachineConfig
-	i  *ign3types.Config
+	name string
+	mc   *machineconfigv1.MachineConfig
+	i    *ign3types.Config
 }
 
 func New(name string) McMaker {
-	m := McMaker{
+	return McMaker{
+		name: name,
 		mc: &machineconfigv1.MachineConfig{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: machineconfigv1.GroupVersion.String(),
 				Kind:       "MachineConfig",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
+				Name:   name,
+				Labels: make(map[string]string),
 			},
 			Spec: machineconfigv1.MachineConfigSpec{},
 		},
@@ -41,8 +46,11 @@ func New(name string) McMaker {
 			},
 		},
 	}
+}
 
-	return m
+func (m *McMaker) SetRole(role string) {
+	m.mc.ObjectMeta.Name = fmt.Sprintf("%s-%s", m.name, role)
+	m.mc.ObjectMeta.Labels[roleKey] = role
 }
 
 func normalizeEmpty(src interface{}) interface{} {

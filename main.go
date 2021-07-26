@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	mcmaker "github.com/lack/mcmaker/pkg"
 )
@@ -71,6 +72,7 @@ func main() {
 	}
 	name := flag.String("name", "", "The name of the MC object to create")
 	stdout := flag.Bool("stdout", false, "If set, dump the object to stdout.  If not, creates a file called 'name.yaml' based on '-name'")
+	role := flag.String("mcp", "master,worker", "The MCP role(s) to select (comman-delimited)")
 	flag.Parse()
 
 	if *name == "" {
@@ -105,5 +107,9 @@ func main() {
 			panic(err)
 		}
 	}
-	m.WriteTo(output)
+	for _, r := range strings.Split(*role, ",") {
+		m.SetRole(r)
+		output.Write([]byte("---\n"))
+		m.WriteTo(output)
+	}
 }
