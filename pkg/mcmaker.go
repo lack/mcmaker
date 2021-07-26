@@ -119,16 +119,20 @@ func trimEmptyMap(src map[string]interface{}) map[string]interface{} {
 }
 
 func (m *McMaker) AddFile(fname, path string, mode int) error {
-	if path == "" {
-		return fmt.Errorf("File entries require a path")
-	}
 	fdata, err := os.Open(fname)
 	if err != nil {
 		return err
 	}
+	return m.AddFileFromStream(fdata, path, mode)
+}
+
+func (m *McMaker) AddFileFromStream(fdata io.Reader, path string, mode int) error {
+	if path == "" {
+		return fmt.Errorf("File entries require a path")
+	}
 	var encodedBytes bytes.Buffer
 	encoder := base64.NewEncoder(base64.StdEncoding, &encodedBytes)
-	_, err = io.Copy(encoder, fdata)
+	_, err := io.Copy(encoder, fdata)
 	if err != nil {
 		return err
 	}
@@ -150,23 +154,30 @@ func (m *McMaker) AddFile(fname, path string, mode int) error {
 	return nil
 }
 
-func (m *McMaker) AddUnit(source, name string, enable bool) error {
-	s, err := os.Open(source)
+func (m *McMaker) AddUnit(fname, name string, enable bool) error {
+	s, err := os.Open(fname)
 	if err != nil {
 		return err
 	}
+	if name == "" {
+		name = filepath.Base(fname)
+	}
+	return m.AddUnitFromStream(s, name, enable)
+}
+
+func (m *McMaker) AddUnitFromStream(source io.Reader, name string, enable bool) error {
+	if name == "" {
+		return fmt.Errorf("Unit entries require a name")
+	}
 
 	var contents bytes.Buffer
-	_, err = io.Copy(&contents, s)
+	_, err := io.Copy(&contents, source)
 	if err != nil {
 		return err
 	}
 
 	contentString := contents.String()
 
-	if name == "" {
-		name = filepath.Base(source)
-	}
 	u := ign3types.Unit{
 		Name:     name,
 		Contents: &contentString,
