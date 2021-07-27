@@ -10,22 +10,24 @@ go install github.com/lack/mcmaker@latest
 ## Usage
 
 ```
+Creates a MachineConfig object with custom contents
+
 Usage:
-  mcmaker [options] [commands...]
+  ./mcmaker [options] [commands...]
 
 Options:
   -mcp string
-        The MCP role(s) to select (comman-delimited) (default "master,worker")
+    	The MCP role(s) to select (comman-delimited) (default "master,worker")
   -name string
-        The name of the MC object to create
+    	The name of the MC object to create
   -stdout
-        If set, dump the object to stdout.  If not, creates a file called 'name.yaml' based on '-name'
+    	If set, dump the object to stdout.  If not, creates a file called 'name.yaml' based on '-name'
 
 Commands:
-  file
-  unit
+  file -source file -path /path [-mode 0644]
+  unit -source file [-name name] [-enable=false]
 
-Run mcmaker -name foo [command] -help for details on each specific command
+Run './mcmaker help command' for details on each specific command
 ```
 
 For example, to construct a MachineConfig object with one executable and two systemd units, you could run something like this:

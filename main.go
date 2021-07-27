@@ -10,7 +10,11 @@ import (
 	mcmaker "github.com/lack/mcmaker/pkg"
 )
 
-type cmdParser func([]string, mcmaker.McMaker) ([]string, error)
+type command struct {
+	name       string
+	run        func([]string, mcmaker.McMaker) ([]string, error)
+	shortusage string
+}
 
 func addFile(args []string, m mcmaker.McMaker) ([]string, error) {
 	c := flag.NewFlagSet("file", flag.ExitOnError)
@@ -55,9 +59,17 @@ func addUnit(args []string, m mcmaker.McMaker) ([]string, error) {
 }
 
 func main() {
-	commands := map[string]cmdParser{
-		"file": addFile,
-		"unit": addUnit,
+	commands := map[string]command{
+		"file": {
+			name:       "file",
+			run:        addFile,
+			shortusage: "file -source file -path /path [-mode 0644]",
+		},
+		"unit": {
+			name:       "unit",
+			run:        addUnit,
+			shortusage: "unit -source file [-name name] [-enable=false]",
+		},
 	}
 
 	flag.Usage = func() {
@@ -65,29 +77,40 @@ func main() {
 		fmt.Fprintf(o, "Creates a MachineConfig object with custom contents\n\nUsage:\n  %s [options] [commands...]\n\nOptions:\n", os.Args[0])
 		flag.CommandLine.PrintDefaults()
 		fmt.Fprintf(o, "\nCommands:\n")
-		for k := range commands {
-			fmt.Fprintf(o, "  %s\n", k)
+		for _, cmd := range commands {
+			fmt.Fprintf(o, "  %s\n", cmd.shortusage)
 		}
-		fmt.Fprintf(o, "\nRun %s -name foo [command] -help for details on each specific command\n", os.Args[0])
+		fmt.Fprintf(o, "\nRun '%s help command' for details on each specific command\n", os.Args[0])
 	}
 	name := flag.String("name", "", "The name of the MC object to create")
 	stdout := flag.Bool("stdout", false, "If set, dump the object to stdout.  If not, creates a file called 'name.yaml' based on '-name'")
 	role := flag.String("mcp", "master,worker", "The MCP role(s) to select (comman-delimited)")
 	flag.Parse()
 
+	if flag.Arg(0) == "help" {
+		cmd := flag.Arg(1)
+		handler, ok := commands[cmd]
+		if ok {
+			handler.run([]string{"-help"}, mcmaker.McMaker{})
+		} else {
+			flag.Usage()
+			os.Exit(0)
+		}
+	}
+
 	if *name == "" {
 		fmt.Fprintf(flag.CommandLine.Output(), "No -name was specified\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
-
 	m := mcmaker.New(*name)
+
 	remaining := flag.Args()
 	var err error
 	for len(remaining) > 0 {
 		handler, ok := commands[remaining[0]]
 		if ok {
-			remaining, err = handler(remaining[1:], m)
+			remaining, err = handler.run(remaining[1:], m)
 			if err != nil {
 				panic(err)
 			}
