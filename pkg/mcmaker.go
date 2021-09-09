@@ -2,7 +2,6 @@ package mcmaker
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
+	"github.com/vincent-petithory/dataurl"
 
 	ign3types "github.com/coreos/ignition/v2/config/v3_2/types"
 	machineconfigv1 "github.com/openshift/machine-config-operator/pkg/apis/machineconfiguration.openshift.io/v1"
@@ -135,14 +135,10 @@ func (m *McMaker) AddFileFromStream(fdata io.Reader, path string, mode int) erro
 	if path == "" {
 		return fmt.Errorf("file entries require a path")
 	}
-	var encodedBytes bytes.Buffer
-	encoder := base64.NewEncoder(base64.StdEncoding, &encodedBytes)
-	_, err := io.Copy(encoder, fdata)
-	if err != nil {
-		return err
-	}
-	encoder.Close()
-	encodedContent := fmt.Sprintf("data:text/plain;charset=utf-8;base64,%s", encodedBytes.String())
+
+	var fbytes bytes.Buffer
+	io.Copy(&fbytes, fdata)
+	encodedContent := dataurl.EncodeBytes(fbytes.Bytes())
 
 	f := ign3types.File{
 		Node: ign3types.Node{
