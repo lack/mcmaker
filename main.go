@@ -84,7 +84,7 @@ func main() {
 	}
 	name := flag.String("name", "", "The name of the MC object to create")
 	stdout := flag.Bool("stdout", false, "If set, dump the object to stdout.  If not, creates a file called 'name.yaml' based on '-name'")
-	role := flag.String("mcp", "master,worker", "The MCP role(s) to select (comman-delimited)")
+	role := flag.String("mcp", "master,worker", "The MCP role(s) to select (comma-delimited)")
 	flag.Parse()
 
 	if flag.Arg(0) == "help" {
