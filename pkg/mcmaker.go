@@ -190,6 +190,47 @@ func (m *McMaker) AddUnitFromStream(source io.Reader, name string, enable bool) 
 	return nil
 }
 
+// AddDropin adds a systemd unit to the MachineConfig object from the given local file
+func (m *McMaker) AddDropin(fname, service, name string) error {
+	s, err := os.Open(fname)
+	if err != nil {
+		return err
+	}
+	if name == "" {
+		name = filepath.Base(fname)
+	}
+	return m.AddDropinFromStream(s, service, name)
+}
+
+// AddDropinFromStream adds a systemd drop-in to the MachineConfig object from the given io.Reader
+func (m *McMaker) AddDropinFromStream(source io.Reader, service, name string) error {
+	if service == "" {
+		return fmt.Errorf("dropin entries require a service")
+	}
+	if name == "" {
+		return fmt.Errorf("dropin entries require a name")
+	}
+
+	var contents bytes.Buffer
+	_, err := io.Copy(&contents, source)
+	if err != nil {
+		return err
+	}
+
+	contentString := contents.String()
+
+	u := ign3types.Unit{
+		Name:     service,
+		Contents: nil,
+		Dropins: []ign3types.Dropin{{
+			Contents: &contentString,
+			Name:     name,
+		}},
+	}
+	m.i.Systemd.Units = append(m.i.Systemd.Units, u)
+	return nil
+}
+
 // WriteTo writes the fully rendered MachineConfig object as yaml to the given io.Writer, after stripping empty fields
 func (m *McMaker) WriteTo(output io.Writer) (int64, error) {
 	//Combine the ingition struct into the mc struct

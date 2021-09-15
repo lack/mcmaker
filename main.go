@@ -58,6 +58,27 @@ func addUnit(args []string, m mcmaker.McMaker) ([]string, error) {
 	return c.Args(), nil
 }
 
+func addDropin(args []string, m mcmaker.McMaker) ([]string, error) {
+	c := flag.NewFlagSet("dropin", flag.ExitOnError)
+	c.Usage = func() {
+		o := flag.CommandLine.Output()
+		fmt.Fprintf(o, "Adds a systemd drop-in to the MachineConfig object\n\nUsage:\n  %s ... dropin [options] ...\n\nOptions:\n", os.Args[0])
+		c.PrintDefaults()
+	}
+	source := c.String("source", "", "The local file containing the drop-in definition")
+	servicename := c.String("for", "", "The name of the service to attach to the drop-in")
+	name := c.String("name", "", "The drop-in name to create (defaults to basename of source)")
+	err := c.Parse(args)
+	if err != nil {
+		return nil, err
+	}
+	err = m.AddDropin(*source, *servicename, *name)
+	if err != nil {
+		return nil, err
+	}
+	return c.Args(), nil
+}
+
 func main() {
 	commands := map[string]command{
 		"file": {
@@ -69,6 +90,11 @@ func main() {
 			name:       "unit",
 			run:        addUnit,
 			shortusage: "unit -source file [-name name] [-enable=false]",
+		},
+		"dropin": {
+			name:       "dropin",
+			run:        addDropin,
+			shortusage: "dropin -source file -for servicename [-name name]",
 		},
 	}
 
