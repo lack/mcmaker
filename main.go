@@ -130,9 +130,12 @@ func main() {
 			panic(err)
 		}
 	}
-	for _, r := range strings.Split(*role, ",") {
+	roles := strings.Split(*role, ",")
+	for _, r := range roles {
+		if len(roles) > 1 {
+			output.Write([]byte("---\n"))
+		}
 		m.SetRole(r)
-		output.Write([]byte("---\n"))
 		m.WriteTo(output)
 	}
 }
