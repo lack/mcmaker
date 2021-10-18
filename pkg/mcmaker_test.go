@@ -115,3 +115,105 @@ spec:
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(result.Bytes()))
 }
+
+func TestMixedUnits(t *testing.T) {
+	var result bytes.Buffer
+	expected := `apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: test
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+      - contents: |
+          [Unit]
+          Description=Not a real unit
+        dropins:
+        - contents: |
+            [Unit]
+            Description=Not a real drop-in
+          name: dropin.conf
+        enabled: true
+        name: example.service
+`
+
+	// Test Unit followed by Drop-in
+	result.Truncate(0)
+	m := New("test")
+	assert.NotNil(t, m)
+	err := m.AddUnit("testdata/example.service", "", true)
+	assert.NoError(t, err)
+	err = m.AddDropin("testdata/dropin.conf", "example.service", "")
+	assert.NoError(t, err)
+
+	_, err = m.WriteTo(&result)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, string(result.Bytes()))
+
+	// Test Drop-in followed by Unit
+	result.Truncate(0)
+	m = New("test")
+	assert.NotNil(t, m)
+	err = m.AddDropin("testdata/dropin.conf", "example.service", "")
+	assert.NoError(t, err)
+	err = m.AddUnit("testdata/example.service", "", true)
+	assert.NoError(t, err)
+
+	_, err = m.WriteTo(&result)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, string(result.Bytes()))
+
+	// Test 2 drop-ins
+	result.Truncate(0)
+	m = New("test")
+	assert.NotNil(t, m)
+	err = m.AddDropin("testdata/dropin.conf", "example.service", "")
+	assert.NoError(t, err)
+	err = m.AddDropin("testdata/example.service", "example.service", "dropin2.conf")
+	assert.NoError(t, err)
+
+	expected = `apiVersion: machineconfiguration.openshift.io/v1
+kind: MachineConfig
+metadata:
+  name: test
+spec:
+  config:
+    ignition:
+      version: 3.2.0
+    systemd:
+      units:
+      - dropins:
+        - contents: |
+            [Unit]
+            Description=Not a real drop-in
+          name: dropin.conf
+        - contents: |
+            [Unit]
+            Description=Not a real unit
+          name: dropin2.conf
+        name: example.service
+`
+
+	_, err = m.WriteTo(&result)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, string(result.Bytes()))
+
+	// Test unit contents collision
+	m = New("test")
+	assert.NotNil(t, m)
+	err = m.AddUnit("testdata/example.service", "", true)
+	assert.NoError(t, err)
+	err = m.AddUnit("testdata/example.service", "", true)
+	assert.Error(t, err)
+
+	// Test dropin name collision
+	m = New("test")
+	assert.NotNil(t, m)
+	err = m.AddDropin("testdata/dropin.conf", "example.service", "")
+	assert.NoError(t, err)
+	err = m.AddDropin("testdata/dropin.conf", "example.service", "")
+	assert.Error(t, err)
+}
