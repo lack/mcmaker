@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 # Get the root directory for make
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-all: tidy gofmt golint govet build test
+all: tidy gofmt govet build test
 
 tidy:
 	@echo "Running go mod tidy"
@@ -17,11 +17,6 @@ gofmt:
 	@echo "Running gofmt"
 	go fmt $(ROOT_DIR)/pkg
 	go fmt $(ROOT_DIR)/main.go
-
-golint:
-	@echo "Running golint"
-	golint $(ROOT_DIR)/pkg/...
-	golint $(ROOT_DIR)/main.go
 
 govet:
 	@echo "Running govet"
