@@ -39,4 +39,4 @@ require (
 // vbom.ml vanity url was removed. For details, see:
 //   - https://github.com/kubernetes/kubectl/issues/925
 //   - https://github.com/kubernetes/kubernetes/pull/94451
-replace vbom.ml/util v0.0.3 => github.com/fvbommel/sortorder v1.0.1
+replace vbom.ml/util => github.com/fvbommel/sortorder v1.0.1
