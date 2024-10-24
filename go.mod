@@ -35,3 +35,8 @@ require (
 	k8s.io/klog/v2 v2.8.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )
+
+// vbom.ml vanity url was removed. For details, see:
+//   - https://github.com/kubernetes/kubectl/issues/925
+//   - https://github.com/kubernetes/kubernetes/pull/94451
+replace vbom.ml/util v0.0.3 => github.com/fvbommel/sortorder v1.0.1
