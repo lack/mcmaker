@@ -3,11 +3,14 @@ SHELL := /usr/bin/env bash
 # Get the root directory for make
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-all: gofmt golint govet build test
+all: tidy gofmt golint govet build test
 
-deps-update:
-	@echo "Running go mod tidy & vendor"
-	go mod tidy && \
+tidy:
+	@echo "Running go mod tidy"
+	go mod tidy
+
+vendor:
+	@ echo "Running go mod vendor"
 	go mod vendor
 
 gofmt:
